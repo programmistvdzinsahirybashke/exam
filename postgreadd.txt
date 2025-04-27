@@ -1,0 +1,103 @@
+-- Таблица товаров
+CREATE TABLE products (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    price NUMERIC(10, 2) NOT NULL,
+    image BYTEA,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Таблица пользователей
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL
+);
+
+-- Таблица корзин
+CREATE TABLE carts (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Таблица товаров в корзине
+CREATE TABLE cart_items (
+    id SERIAL PRIMARY KEY,
+    cart_id INTEGER REFERENCES carts(id) ON DELETE CASCADE,
+    product_id INTEGER REFERENCES products(id),
+    quantity INTEGER NOT NULL DEFAULT 1
+);
+
+-- Таблица пунктов выдачи
+CREATE TABLE pickup_points (
+    id SERIAL PRIMARY KEY,
+    address TEXT NOT NULL
+);
+
+-- Таблица заказов
+CREATE TABLE orders (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    pickup_point_id INTEGER REFERENCES pickup_points(id),
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(50) DEFAULT 'Новый'
+);
+
+-- Таблица товаров в заказе
+CREATE TABLE order_items (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+    product_id INTEGER REFERENCES products(id),
+    quantity INTEGER NOT NULL DEFAULT 1
+);
+
+
+
+-- Пользователи
+
+
+INSERT INTO users (username, password_hash) VALUES 
+('test_user', 'hash123'),
+('admin', 'adminhash'),
+('johndoe', 'doehashed');
+
+-- Товары
+INSERT INTO products (name, description, price, image) VALUES 
+('Велосипед', 'Для продвинутых пользователей, до 35 км/ч', 51000.00, pg_read_binary_file('D:\photo_2021-12-06_01-27-03.jpg')::bytea);
+
+-- Пункты выдачи
+INSERT INTO pickup_points (address) VALUES 
+('ул. Ленина, д. 10'),
+('пр. Победы, д. 5'),
+('ул. Центральная, д. 22'),
+('ул. Гагарина, д. 7'),
+('ул. Техническая, д. 1');
+
+-- Корзина пользователя
+INSERT INTO carts (user_id) VALUES (1);
+
+-- Товары в корзине
+INSERT INTO cart_items (cart_id, product_id, quantity) VALUES 
+(1, 1, 2),  -- Электросамокат x2
+(1, 3, 1),  -- Моноколесо x1
+(1, 4, 1);  -- Гироскутер x1
+
+-- Заказ пользователя
+INSERT INTO orders (user_id, pickup_point_id) VALUES 
+(1, 2);
+
+-- Товары в заказе
+INSERT INTO order_items (order_id, product_id, quantity) VALUES 
+(1, 1, 2),  -- Электросамокат x2
+(1, 3, 1),  -- Моноколесо x1
+(1, 4, 1);  -- Гироскутер x1
+
+
+SELECT p.name, p.price, oi.quantity
+FROM order_items oi
+JOIN products p ON oi.product_id = p.id
+WHERE oi.order_id = 1;
+
